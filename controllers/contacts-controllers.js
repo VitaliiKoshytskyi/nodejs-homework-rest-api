@@ -1,10 +1,20 @@
 const { Contact } = require("../models/contact.js");
 
-const HttpError = require("../helpers/HttpError");
+const HttpError = require("../helpers/HttpError.js");
 
 const getAllContacts = async (req, res, next) => {
   try {
-    const result = await Contact.find();
+    const { _id: owner } = req.user;
+    const { page, limit, favorite } = req.query;
+    const skip = (page - 1) * limit;
+    const filter = { owner };
+    if (favorite) {
+      filter.favorite = favorite;
+    }
+    const result = await Contact.find(filter, "-createdAt", {
+      skip,
+      limit,
+    }).populate("owner");
     res.json(result);
   } catch (error) {
     next(error);
@@ -26,7 +36,8 @@ const getContact = async (req, res, next) => {
 
 const addNewContact = async (req, res, next) => {
   try {
-    const result = await Contact.create(req.body);
+    const { _id: owner } = req.user;
+    const result = await Contact.create({ ...req.body, owner });
     res.status(201).json(result);
   } catch (error) {
     next(error);
