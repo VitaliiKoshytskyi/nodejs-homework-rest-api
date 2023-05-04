@@ -1,6 +1,16 @@
 const bcrypt = require("bcrypt");
 
+const gravatar = require("gravatar");
+
+const fs = require("fs/promises");
+
+const path = require("path");
+
+const avatarsDir = path.resolve("public", "avatars");
+
 const jwt = require("jsonwebtoken");
+
+const resizeAvatar = require("../helpers/resizeAvatar/resizeAvatar");
 
 const { User } = require("../models/user");
 
@@ -16,7 +26,13 @@ const register = async (req, res, next) => {
       throw HttpError(409, "Email in use");
     }
     const hashPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ ...req.body, password: hashPassword });
+
+    const avatarURL = gravatar.url(email);
+    const newUser = await User.create({
+      ...req.body,
+      password: hashPassword,
+      avatarURL,
+    });
 
     res.status(201).json({
       user: {
@@ -48,7 +64,7 @@ const login = async (req, res, next) => {
     await User.findByIdAndUpdate(user._id, { token });
     res.json({
       token,
-       user: {
+      user: {
         email: user.email,
         subscription: user.subscription,
       },
@@ -60,10 +76,10 @@ const login = async (req, res, next) => {
 
 const getCurrent = async (req, res) => {
   const { email } = req.user;
-   const user = await User.findOne({ email });
+  const user = await User.findOne({ email });
   res.json({
     email,
-     subscription: user.subscription,
+    subscription: user.subscription,
   });
 };
 
@@ -73,9 +89,23 @@ const logout = async (req, res) => {
   res.status(204).json();
 };
 
+const updateAvatar = async (req, res) => {
+  const { path: tempUpload, filename } = req.file;
+  const { _id } = req.user;
+  await resizeAvatar(tempUpload);
+  const resultUpload = path.join(avatarsDir, filename);
+  await fs.rename(tempUpload, resultUpload);
+  const avatarURL = path.join("avatars", filename);
+  await User.findByIdAndUpdate(_id, { avatarURL });
+  res.json({
+    avatarURL,
+  });
+};
+
 module.exports = {
   getCurrent,
   register,
   login,
   logout,
+  updateAvatar,
 };
