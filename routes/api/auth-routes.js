@@ -2,7 +2,9 @@ const express = require("express");
 
 const authController = require("../../controllers/auth-controllers")
 
-const authenticate = require("../../middlewares/authenticate")
+const authenticate = require("../../middlewares/authenticate");
+
+const upload = require("../../middlewares/upload");
 
 const { validateUpdateContact } = require("../../validation/validate.js");
 
@@ -16,6 +18,9 @@ router.post("/login", validateUpdateContact(schemas.userLoginSchema), authContro
 
 router.get("/current", authenticate, authController.getCurrent);
 
-router.post("/logout", authenticate, authController.logout)
+router.post("/logout", authenticate, authController.logout);
+
+router.patch("/avatars",authenticate,upload.single("avatar"),authController.updateAvatar)
+
 
 module.exports = router;
