@@ -14,6 +14,10 @@ const router = express.Router();
 
 router.post("/register", validateUpdateContact(schemas.userRegisterSchema), authController.register);
 
+router.get("/verify/:verificationToken", authController.verify);
+
+router.post("/verify",validateUpdateContact(schemas.emailSchema), authController.resendVerifyEmail)
+
 router.post("/login", validateUpdateContact(schemas.userLoginSchema), authController.login);
 
 router.get("/current", authenticate, authController.getCurrent);
